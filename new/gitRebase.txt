@@ -1,0 +1,27 @@
+You
+what is the pick thing?
+Copilot
+In the context of a Git interactive rebase, the term pick is used to indicate that you want to include a specific commit as it is in the new history you're creating. Here’s a quick breakdown of the commands you might see in the rebase editor:
+
+Interactive Rebase Commands
+pick: Use the commit as it is. This is the default option.
+
+reword: Use the commit, but edit the commit message.
+
+edit: Use the commit, but stop after applying it, allowing you to make further changes.
+
+squash: Meld the commit into the previous commit, combining their changes and commit messages.
+
+fixup: Similar to squash, but keeps only the previous commit's message.
+
+exec: Run a shell command.
+
+break: Stop here and continue the rebase later.
+
+drop: Remove the commit from the history.
+
+label: Label the current HEAD with a name.
+
+reset: Reset HEAD to a previously labeled commit.
+
+merge: Create a merge commit.

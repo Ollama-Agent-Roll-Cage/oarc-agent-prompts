@@ -1,0 +1,617 @@
+Certainly! Here are some advanced mixed model architectures that combine multiple types of layers and mechanisms. These models leverage the strengths of different architectures to improve forecasting performance.
+
+---
+
+### **1. CNN-Bidirectional LSTM with Attention Model**
+
+**Filename:** `model_config_cnn_bi_lstm_attention.yaml`
+
+```yaml
+# model_config_cnn_bi_lstm_attention.yaml
+layers:
+  - type: Conv1D
+    params:
+      filters: 64
+      kernel_size: 3
+      activation: 'relu'
+  - type: MaxPooling1D
+    params:
+      pool_size: 2
+  - type: Bidirectional
+    layer:
+      type: LSTM
+      params:
+        units: 128
+        return_sequences: true
+  - type: Attention
+    params: {}
+  - type: Flatten
+    params: {}
+  - type: Dense
+    params:
+      units: 64
+      activation: 'relu'
+  - type: Dropout
+    params:
+      rate: 0.2
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0005
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 100
+batch_size: 64
+```
+
+**Explanation:**
+
+- **Conv1D Layer:** Extracts local features from the time series data.
+- **MaxPooling1D Layer:** Reduces dimensionality and focuses on the most prominent features.
+- **Bidirectional LSTM:** Captures patterns in both forward and backward directions.
+- **Attention Layer:** Helps the model focus on important time steps.
+- **Flatten and Dense Layers:** Combine features and reduce dimensionality before the output.
+
+---
+
+### **2. Multi-Head Attention with LSTM Encoder-Decoder Model**
+
+**Filename:** `model_config_multihead_attention_lstm.yaml`
+
+```yaml
+# model_config_multihead_attention_lstm.yaml
+layers:
+  - type: LSTM
+    params:
+      units: 128
+      return_sequences: true
+  - type: MultiHeadAttention
+    params:
+      num_heads: 4
+      key_dim: 32
+  - type: Flatten
+    params: {}
+  - type: Dense
+    params:
+      units: 64
+      activation: 'relu'
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.001
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 120
+batch_size: 32
+```
+
+**Note:** The `MultiHeadAttention` layer is available in TensorFlow 2.4 and later.
+
+**Explanation:**
+
+- **LSTM Layer:** Processes the input sequence.
+- **Multi-Head Attention:** Allows the model to focus on different parts of the sequence simultaneously.
+- **Flatten and Dense Layers:** Prepare the data for the final output.
+
+---
+
+### **3. Dual-Input Model with CNN and LSTM Branches**
+
+**Filename:** `model_config_dual_input.yaml`
+
+```yaml
+# model_config_dual_input.yaml
+layers:
+  - type: Input
+    params:
+      shape: [input_shape_1]  # Replace with actual shape
+    name: 'input_cnn'
+  - type: Conv1D
+    params:
+      filters: 64
+      kernel_size: 3
+      activation: 'relu'
+    input: 'input_cnn'
+  - type: MaxPooling1D
+    params:
+      pool_size: 2
+  - type: Flatten
+    params: {}
+  - type: ModelBranch
+    name: 'cnn_branch'
+  - type: Input
+    params:
+      shape: [input_shape_2]  # Replace with actual shape
+    name: 'input_lstm'
+  - type: LSTM
+    params:
+      units: 128
+      return_sequences: false
+    input: 'input_lstm'
+  - type: ModelBranch
+    name: 'lstm_branch'
+  - type: Concatenate
+    inputs:
+      - 'cnn_branch'
+      - 'lstm_branch'
+  - type: Dense
+    params:
+      units: 64
+      activation: 'relu'
+  - type: Output
+    name: 'output_layer'
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0005
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 100
+batch_size: 64
+```
+
+**Important Note:** This configuration requires modifications to your `build_model` function to handle multiple inputs and custom model structures.
+
+**Explanation:**
+
+- **Dual Inputs:** The model accepts two different inputs processed by separate branches.
+- **CNN Branch:** Processes one input using convolutional layers.
+- **LSTM Branch:** Processes the other input using LSTM layers.
+- **Concatenate Layer:** Merges the outputs of both branches.
+- **Dense Layer:** Processes the combined features.
+- **Output Layer:** Produces the final prediction.
+
+---
+
+### **4. Stacked Residual LSTM Model**
+
+**Filename:** `model_config_residual_lstm.yaml`
+
+```yaml
+# model_config_residual_lstm.yaml
+layers:
+  - type: LSTM
+    params:
+      units: 128
+      return_sequences: true
+  - type: Residual
+    layers:
+      - type: LSTM
+        params:
+          units: 128
+          return_sequences: true
+      - type: LSTM
+        params:
+          units: 128
+          return_sequences: true
+  - type: LSTM
+    params:
+      units: 64
+      return_sequences: false
+  - type: Dense
+    params:
+      units: 32
+      activation: 'relu'
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0003
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 150
+batch_size: 64
+```
+
+**Note:** Implementing residual connections requires custom logic in your `build_model` function.
+
+**Explanation:**
+
+- **Initial LSTM Layer:** Processes the input sequence.
+- **Residual Block:** Stacks LSTM layers with a skip connection to improve gradient flow.
+- **Final LSTM Layer:** Further processes the sequence.
+- **Dense Layer:** Reduces dimensionality before the output.
+
+---
+
+### **5. Encoder-Decoder LSTM with Attention**
+
+**Filename:** `model_config_encoder_decoder_attention.yaml`
+
+```yaml
+# model_config_encoder_decoder_attention.yaml
+layers:
+  - type: LSTM
+    params:
+      units: 256
+      return_sequences: true
+      name: 'encoder_lstm'
+  - type: RepeatVector
+    params:
+      n: decoder_steps  # Number of time steps in the decoder
+  - type: LSTM
+    params:
+      units: 256
+      return_sequences: true
+      name: 'decoder_lstm'
+  - type: Attention
+    params: {}
+  - type: TimeDistributed
+    layer:
+      type: Dense
+      params:
+        units: 64
+        activation: 'relu'
+  - type: Flatten
+    params: {}
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0005
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 200
+batch_size: 32
+```
+
+**Explanation:**
+
+- **Encoder LSTM:** Encodes the input sequence.
+- **RepeatVector:** Repeats the encoder output for each time step in the decoder.
+- **Decoder LSTM:** Decodes the sequence to produce outputs.
+- **Attention Layer:** Enhances the decoder's ability to focus on relevant encoder outputs.
+- **TimeDistributed Dense Layer:** Applies a dense layer to each time step.
+- **Flatten Layer:** Prepares the data for the final output.
+
+---
+
+### **6. Hybrid CNN-LSTM-GRU Model**
+
+**Filename:** `model_config_cnn_lstm_gru.yaml`
+
+```yaml
+# model_config_cnn_lstm_gru.yaml
+layers:
+  - type: Conv1D
+    params:
+      filters: 32
+      kernel_size: 3
+      activation: 'relu'
+  - type: MaxPooling1D
+    params:
+      pool_size: 2
+  - type: LSTM
+    params:
+      units: 64
+      return_sequences: true
+  - type: GRU
+    params:
+      units: 64
+      return_sequences: false
+  - type: Dense
+    params:
+      units: 32
+      activation: 'relu'
+  - type: Dropout
+    params:
+      rate: 0.2
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0001
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 80
+batch_size: 64
+```
+
+**Explanation:**
+
+- **Conv1D Layer:** Extracts features from the input sequence.
+- **LSTM Layer:** Captures temporal dependencies.
+- **GRU Layer:** Further processes the sequence with a different recurrent unit.
+- **Dense and Dropout Layers:** Reduce overfitting and prepare for the output.
+
+---
+
+### **7. Temporal Convolutional Network (TCN) Model**
+
+**Filename:** `model_config_tcn.yaml`
+
+```yaml
+# model_config_tcn.yaml
+layers:
+  - type: TCN
+    params:
+      nb_filters: 64
+      kernel_size: 3
+      nb_stacks: 1
+      dilations:
+        - 1
+        - 2
+        - 4
+      activation: 'relu'
+      use_skip_connections: true
+  - type: Dense
+    params:
+      units: 32
+      activation: 'relu'
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0001
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 100
+batch_size: 32
+```
+
+**Note:** The `TCN` layer requires the `keras-tcn` package. Install it using `pip install keras-tcn`.
+
+**Explanation:**
+
+- **TCN Layer:** Specialized convolutional architecture for sequence modeling.
+- **Dense Layer:** Processes the features extracted by the TCN.
+
+---
+
+### **8. Multi-Head CNN with Shared Weights**
+
+**Filename:** `model_config_multihead_cnn.yaml`
+
+```yaml
+# model_config_multihead_cnn.yaml
+layers:
+  - type: Input
+    params:
+      shape: [input_shape]
+    name: 'input_layer'
+  - type: Conv1D
+    params:
+      filters: 32
+      kernel_size: 3
+      activation: 'relu'
+    input: 'input_layer'
+  - type: Conv1D
+    params:
+      filters: 32
+      kernel_size: 5
+      activation: 'relu'
+    input: 'input_layer'
+  - type: Conv1D
+    params:
+      filters: 32
+      kernel_size: 7
+      activation: 'relu'
+    input: 'input_layer'
+  - type: Concatenate
+    inputs:
+      - 'conv1d_1'
+      - 'conv1d_2'
+      - 'conv1d_3'
+  - type: GlobalAveragePooling1D
+    params: {}
+  - type: Dense
+    params:
+      units: 64
+      activation: 'relu'
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0003
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 60
+batch_size: 64
+```
+
+**Note:** You need to modify the `build_model` function to handle multiple inputs and custom connections.
+
+**Explanation:**
+
+- **Multiple Conv1D Layers:** Processes the input with different kernel sizes.
+- **Concatenate Layer:** Merges the outputs of the convolutional layers.
+- **GlobalAveragePooling1D:** Reduces the data dimensionality.
+- **Dense Layer:** Prepares for the final output.
+
+---
+
+### **9. LSTM Autoencoder Model**
+
+**Filename:** `model_config_lstm_autoencoder.yaml`
+
+```yaml
+# model_config_lstm_autoencoder.yaml
+layers:
+  - type: LSTM
+    params:
+      units: 128
+      return_sequences: true
+      name: 'encoder_lstm_1'
+  - type: LSTM
+    params:
+      units: 64
+      return_sequences: false
+      name: 'encoder_lstm_2'
+  - type: RepeatVector
+    params:
+      n: time_steps  # Number of time steps in the input sequence
+  - type: LSTM
+    params:
+      units: 64
+      return_sequences: true
+      name: 'decoder_lstm_1'
+  - type: LSTM
+    params:
+      units: 128
+      return_sequences: true
+      name: 'decoder_lstm_2'
+  - type: TimeDistributed
+    layer:
+      type: Dense
+      params:
+        units: num_features  # Number of features in the input
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0005
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+epochs: 150
+batch_size: 32
+```
+
+**Explanation:**
+
+- **Encoder LSTM Layers:** Compress the input sequence into a latent representation.
+- **RepeatVector:** Repeats the latent representation.
+- **Decoder LSTM Layers:** Reconstruct the sequence from the latent representation.
+- **TimeDistributed Dense Layer:** Outputs the reconstructed features at each time step.
+
+---
+
+### **10. Combined CNN-LSTM with External Features**
+
+**Filename:** `model_config_cnn_lstm_external.yaml`
+
+```yaml
+# model_config_cnn_lstm_external.yaml
+layers:
+  - type: Input
+    params:
+      shape: [sequence_length, num_features]
+    name: 'sequence_input'
+  - type: Conv1D
+    params:
+      filters: 64
+      kernel_size: 3
+      activation: 'relu'
+    input: 'sequence_input'
+  - type: MaxPooling1D
+    params:
+      pool_size: 2
+  - type: LSTM
+    params:
+      units: 128
+      return_sequences: false
+  - type: ModelBranch
+    name: 'sequence_branch'
+  - type: Input
+    params:
+      shape: [num_external_features]
+    name: 'external_input'
+  - type: Dense
+    params:
+      units: 32
+      activation: 'relu'
+    input: 'external_input'
+  - type: ModelBranch
+    name: 'external_branch'
+  - type: Concatenate
+    inputs:
+      - 'sequence_branch'
+      - 'external_branch'
+  - type: Dense
+    params:
+      units: 64
+      activation: 'relu'
+  - type: Output
+    name: 'output_layer'
+optimizer:
+  type: 'Adam'
+  params:
+    learning_rate: 0.0003
+loss: 'mean_squared_error'
+metrics:
+  - 'mean_squared_error'
+  - 'mean_absolute_error'
+epochs: 100
+batch_size: 64
+```
+
+**Explanation:**
+
+- **Sequence Input Branch:** Processes the time series data through CNN and LSTM layers.
+- **External Input Branch:** Processes additional external features through Dense layers.
+- **Concatenate Layer:** Merges both branches.
+- **Dense Layer:** Processes the combined features before the output.
+
+---
+
+### **Implementing Complex Models**
+
+**Important Notes:**
+
+- **Custom Layers and Logic:** Some configurations require custom layers or modifications to your `build_model` function to handle complex architectures like residual connections, multiple inputs, and attention mechanisms.
+
+- **Handling Multiple Inputs and Outputs:**
+
+  - Use the Functional API of Keras instead of the Sequential model when dealing with multiple inputs or outputs.
+  - Adjust your `build_model` function to construct models using the Functional API.
+
+**Example of Adjusting `build_model` for the Functional API:**
+
+```python
+def build_model(input_shape, output_shape, config):
+    """
+    Build and compile the TensorFlow model based on the given configuration.
+    """
+    logger.info("Building the model based on the configuration...")
+    
+    inputs = {}
+    outputs = {}
+    layers_dict = {}
+    
+    # First pass: Create inputs
+    for layer_config in config['layers']:
+        if layer_config['type'] == 'Input':
+            name = layer_config.get('name', f"input_{len(inputs)}")
+            shape = layer_config['params']['shape']
+            inputs[name] = tf.keras.Input(shape=shape, name=name)
+            layers_dict[name] = inputs[name]
+    
+    # Subsequent passes: Build layers
+    for layer_config in config['layers']:
+        layer_type = layer_config['type']
+        params = layer_config.get('params', {})
+        name = layer_config.get('name')
+        input_name = layer_config.get('input')
+        input_layer = layers_dict.get(input_name)
+    
+        # Implement layer creation logic here, similar to previous build_model
+        # Handle special cases like Concatenate, ModelBranch, etc.
+    
+    # Create the model
+    model = tf.keras.Model(inputs=list(inputs.values()), outputs=final_output)
+    
+    # Compile the model
+    # Same as before
+    
+    return model
+```
+
+**Due to the complexity, ensure you thoroughly test each model configuration and adjust your code accordingly.**
+
+---
+
+### **Conclusion**
+
+These advanced mixed models combine multiple architectures to capture complex patterns in time series data. By experimenting with these configurations, you can explore how different combinations affect your model's performance. Remember to adjust the configurations based on your specific dataset and requirements.
+
+If you need assistance implementing these models or have questions about customizing them further, feel free to ask!
